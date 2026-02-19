@@ -26,13 +26,15 @@ def daily_summary_from_forecast(forecast_json) -> list[dict]:
         date = item["dt_txt"].split(" ")[0]
         tmin = item["main"]["temp_min"]
         tmax = item["main"]["temp_max"]
+        feels_like = item["main"]["feels_like"]
         desc = item["weather"][0]["description"]
 
         if date not in by_date:
-            by_date[date] = {"tmin": tmin, "tmax": tmax, "desc": {desc: 1}}
+            by_date[date] = {"tmin": tmin, "tmax": tmax, "feels_like": feels_like, "desc": {desc: 1}}
         else:
             by_date[date]["tmin"] = min(by_date[date]["tmin"], tmin)
             by_date[date]["tmax"] = max(by_date[date]["tmax"], tmax)
+            by_date[date]["feels_like"] = round((by_date[date]["feels_like"] + feels_like) / 2)
             counts = by_date[date]["desc"]
             counts[desc] = counts.get(desc, 0) + 1
 
@@ -41,6 +43,7 @@ def daily_summary_from_forecast(forecast_json) -> list[dict]:
             "date": date,
             "tmin": round(info["tmin"]),
             "tmax": round(info["tmax"]),
+            "feels_like": info["feels_like"],
             "desc": max(info["desc"], key=info["desc"].get),
         }
         for date, info in by_date.items()
@@ -55,5 +58,5 @@ def format_forecast_data(forecast_json, days = 4) -> str:
 
     lines = [f"Forecast for {city}, {country} (next {len(daily)} days):"]
     for day in daily:
-        lines.append(f"{day['date']}: {day['tmin']}°C - {day['tmax']}°C, {day['desc']}")
+        lines.append(f"{day['date']}: {day['tmin']}°C - {day['tmax']}°C, feels like {day['feels_like']}°C, {day['desc']}")
     return "\n".join(lines)
